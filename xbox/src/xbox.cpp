@@ -6,8 +6,10 @@ namespace xbox
     {
         Init();
 
+        xbox_pub_ = this->create_publisher<xbox_interfaces::msg::XboxControl>("/xbox", 10);
+
         timer_ = this->create_wall_timer(
-            std::chrono::microseconds(100), std::bind(&XboxNode::MainLoop, this));
+            std::chrono::milliseconds(1), std::bind(&XboxNode::MainLoop, this));
     }
 
     void XboxNode::MainLoop()
@@ -15,16 +17,61 @@ namespace xbox
         if (xbox_fd >= 0)
         {
             len = xbox_map_read(xbox_fd, &map);
+
             if (len < 0)
             {
-                usleep(10 * 1000);
+                RCLCPP_INFO(this->get_logger(), "len < 0");
             }
 
-            RCLCPP_INFO(this->get_logger(), "\rTime:%8d A:%d B:%d X:%d Y:%d LB:%d RB:%d start:%d back:%d home:%d LO:%d RO:%d XX:%-6d YY:%-6d LX:%-6d LY:%-6d RX:%-6d RY:%-6d LT:%-6d RT:%-6d",
-                        map.time, map.a, map.b, map.x, map.y, map.lb, map.rb, map.start, map.back, map.home, map.lo, map.ro,
-                        map.xx, map.yy, map.lx, map.ly, map.rx, map.ry, map.lt, map.rt);
+            if (this->map_lt_flag_ == 0)
+            {
+                if (map.lt != 0)
+                {
+                    this->map_lt_flag_ = 1;
+                }
+                else
+                {
+                    map.lt = XBOX_AXIS_VAL_MIN;
+                }
+            }
 
-            // fflush(stdout);
+            if (this->map_rt_flag_ == 0)
+            {
+                if (map.rt != 0)
+                {
+                    this->map_rt_flag_ = 1;
+                }
+                else
+                {
+                    map.rt = XBOX_AXIS_VAL_MIN;
+                }
+            }
+
+            xbox_msg_.a = map.a;
+            xbox_msg_.b = map.b;
+            xbox_msg_.x = map.x;
+            xbox_msg_.y = map.y;
+            xbox_msg_.lb = map.lb;
+            xbox_msg_.rb = map.rb;
+            xbox_msg_.start = map.start;
+            xbox_msg_.back = map.back;
+            xbox_msg_.home = map.home;
+            xbox_msg_.lo = map.lo;
+            xbox_msg_.ro = map.ro;
+            xbox_msg_.xx = map.xx;
+            xbox_msg_.yy = map.yy;
+            xbox_msg_.lx = map.lx;
+            xbox_msg_.ly = map.ly;
+            xbox_msg_.rx = map.rx;
+            xbox_msg_.ry = map.ry;
+            xbox_msg_.lt = map.lt;
+            xbox_msg_.rt = map.rt;
+
+            xbox_pub_->publish(xbox_msg_);
+
+            // RCLCPP_INFO(this->get_logger(), "\rTime:%8d A:%d B:%d X:%d Y:%d LB:%d RB:%d start:%d back:%d home:%d LO:%d RO:%d XX:%-6d YY:%-6d LX:%-6d LY:%-6d RX:%-6d RY:%-6d LT:%-6d RT:%-6d",
+            //             map.time, map.a, map.b, map.x, map.y, map.lb, map.rb, map.start, map.back, map.home, map.lo, map.ro,
+            //             map.xx, map.yy, map.lx, map.ly, map.rx, map.ry, map.lt, map.rt);
         }
     }
 

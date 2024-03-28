@@ -13,6 +13,8 @@
 #include <rclcpp/qos.hpp>
 #include <rclcpp/utilities.hpp>
 
+#include <xbox_interfaces/msg/xbox_control.hpp>
+
 #define XBOX_TYPE_BUTTON 0x01
 #define XBOX_TYPE_AXIS 0x02
 
@@ -99,5 +101,11 @@ namespace xbox
         int xbox_open(char *file_name);
         int xbox_map_read(int xbox_fd, xbox_map_t *map);
         void xbox_close(int xbox_fd);
+
+        rclcpp::Publisher<xbox_interfaces::msg::XboxControl>::SharedPtr xbox_pub_;
+        xbox_interfaces::msg::XboxControl xbox_msg_;
+
+        bool map_lt_flag_ = 0;
+        bool map_rt_flag_ = 0;
     };
 }

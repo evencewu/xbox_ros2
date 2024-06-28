@@ -92,6 +92,8 @@ namespace xbox
 
         rclcpp::TimerBase::SharedPtr timer_;
 
+        bool init_flag_ = false;
+
         int xbox_fd;
         xbox_map_t map;
         int len, type;

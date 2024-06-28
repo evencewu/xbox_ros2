@@ -4,8 +4,6 @@ namespace xbox
 {
     XboxNode::XboxNode() : Node("xbox_node")
     {
-        Init();
-
         xbox_pub_ = this->create_publisher<xbox_interfaces::msg::XboxControl>("/xbox", 10);
 
         timer_ = this->create_wall_timer(
@@ -14,12 +12,21 @@ namespace xbox
 
     void XboxNode::MainLoop()
     {
-        if (xbox_fd >= 0)
+        RCLCPP_INFO(this->get_logger(), "Loop %d",init_flag_);
+
+        if (init_flag_ == false)
+        {
+            RCLCPP_INFO(this->get_logger(), "init");
+            Init();
+        }
+
+        if (init_flag_ == true)
         {
             len = xbox_map_read(xbox_fd, &map);
 
             if (len < 0)
             {
+                init_flag_ = false;
                 RCLCPP_INFO(this->get_logger(), "len < 0");
             }
 
@@ -86,9 +93,9 @@ namespace xbox
 
         xbox_fd = xbox_open("/dev/input/js0");
 
-        if (xbox_fd < 0)
+        if (xbox_fd >= 0)
         {
-            RCLCPP_INFO(this->get_logger(), "NO XboxJoy Found!");
+            init_flag_ = true;
         }
     }
 
